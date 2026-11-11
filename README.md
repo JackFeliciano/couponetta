@@ -2,7 +2,9 @@
 
 ## What the project is
 
-Couponetta is a PHP 8.3 program for issuing vouchers and redeeming their value in parts. Each voucher carries a code, one holder, a face value in cents, an issued day and a last day.
+Couponetta connects businesses offering discounted products or services with buyers who pay upfront to claim a coupon.
+
+Each deal defines its normal price, discounted price, available coupon quantity, purchase deadline and final redemption date. Buyers receive a unique six character code, which the business validates once at redemption. The platform shares each sale with the business under an agreed arrangement.
 
 A holder can redeem part of the voucher's remaining balance. Each redemption records an amount in cents and the day it happened. Couponetta refuses a redemption of zero or an amount above the remaining balance. It also refuses redemptions before the issued day or after the last day. A different holder cannot redeem the voucher.
 

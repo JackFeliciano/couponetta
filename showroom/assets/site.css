@@ -34,9 +34,9 @@ p { margin: 0 0 1rem; }
   padding-top: 0.7rem;
 }
 
-.vouchers { display: grid; gap: 1.1rem; margin: 1.5rem 0; }
+.deals { display: grid; gap: 1.1rem; margin: 1.5rem 0; }
 
-.voucher {
+.deal {
   border: 1px solid var(--rule);
   background: #fff;
   padding: 0.9rem 1.1rem;
@@ -44,14 +44,15 @@ p { margin: 0 0 1rem; }
 
 .where { font-size: 0.9rem; color: #444; margin: 0 0 0.4rem; }
 
-.money { font-size: 0.95rem; margin: 0 0 0.5rem; }
-.untouched { font-size: 0.95rem; margin: 0; color: #6b6b6b; }
-.open { font-size: 0.9rem; margin: 0.5rem 0 0; color: #1b5e20; }
-.closed { font-size: 0.9rem; margin: 0.5rem 0 0; color: #6b6b6b; }
+.price { font-size: 1rem; margin: 0 0 0.35rem; }
+.price strong { color: var(--mark); font-weight: normal; }
+.terms { font-size: 0.9rem; margin: 0 0 0.3rem; color: #333; }
+.split { font-size: 0.85rem; margin: 0; color: #6b6b6b; }
 
-.runs { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 0.4rem; }
-.runs th, .runs td { text-align: left; padding: 0.2rem 0.5rem 0.2rem 0; border-bottom: 1px solid var(--rule); }
-.runs th { font-weight: normal; color: #555; }
+.ledger { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 0.4rem; }
+.ledger th, .ledger td { text-align: left; padding: 0.2rem 0.5rem 0.2rem 0; border-bottom: 1px solid var(--rule); }
+.ledger th { font-weight: normal; color: #555; }
+.ledger td:not(:first-child), .ledger th:not(:first-child) { text-align: right; }
 
 .steps { padding-left: 1.2rem; font-size: 0.95rem; }
 .steps li { margin-bottom: 0.6rem; }

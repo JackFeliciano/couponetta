@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Couponetta\App;
 
 use Couponetta\Home\Sample;
-use Couponetta\Home\Voucher;
 
 /**
  * The HTML. Every string reaching the page goes through h(), and every amount in
@@ -54,60 +53,74 @@ HTML;
 
     public function front(Sample $sample): string
     {
-        $TITLE = 'Couponetta, one voucher spent in parts';
-        $LEDE = 'Couponetta issues vouchers with limited values that holders can redeem in parts before the last day.';
-        $WHAT = 'Each voucher has a code, one holder, a face value, an issued day and a last day. The holder can redeem part of the value by submitting an amount and the day of redemption. Couponetta checks that the amount is above zero, within the remaining balance and within the voucher\'s valid dates. Another holder cannot redeem it. Each accepted redemption reduces the balance. A zero balance means the voucher is spent, and the balance never falls below zero.';
+        $TITLE = 'Couponetta, deals a business posts and a buyer claims';
+        $LEDE = 'Couponetta connects businesses offering discounted products or services with buyers who pay upfront to claim a coupon.';
+        $WHAT = 'Each deal defines its normal price, discounted price, available coupon quantity, purchase deadline and final redemption date. Buyers receive a unique six character code, which the business validates once at redemption. The platform shares each sale with the business under an agreed arrangement.';
 
+        $m = $sample->market();
         $out = $this->header($TITLE);
         $out .= '<h1>' . $this->h($TITLE) . '</h1>' . "\n";
         $out .= '<p class="lede">' . $this->h($LEDE) . '</p>' . "\n";
         $out .= '<p>' . $this->h($WHAT) . '</p>' . "\n";
-        $out .= '<p class="stage">Vouchers: ' . count($sample->vouchers()) . '. Redemptions: ' . $sample->redemptions()
-            . '. Balance held: ' . $this->h($this->money($sample->balance())) . '.</p>' . "\n";
+        $out .= '<p class="stage">Deals on the wall: ' . $sample->deals() . '. Coupons sold: ' . $sample->couponsSold()
+            . '. Coupons used: ' . $sample->couponsUsed() . '. Takings: ' . $this->h($this->money($sample->takings()))
+            . '. Platform share: ' . $this->h($this->money($sample->toPlatform())) . ".</p>\n";
 
-        $out .= '<div class="vouchers">' . "\n";
-        foreach ($sample->vouchers() as $voucher) {
-            $out .= $this->card($voucher);
+        $out .= '<div class="deals">' . "\n";
+        foreach ($m->wall(Sample::TODAY) as $row) {
+            $out .= $this->card($row);
         }
         $out .= '</div>' . "\n";
 
-        $out .= '<h2>What a voucher does</h2>' . "\n";
+        $out .= '<h2>What a deal does</h2>' . "\n";
         $out .= '<ol class="steps">' . "\n";
         foreach ([
-            ['Voucher issued', 'Couponetta creates a voucher for one holder with a value and valid dates.'],
-            ['Holder redeems', 'The holder submits an amount and the day of redemption.'],
-            ['Balance falls', 'Couponetta deducts each accepted redemption from the remaining value.'],
-            ['Last day closes', 'The voucher takes no redemption after its last day.'],
-            ['Record answers', 'The voucher reports whether its balance is spent or still holds value.'],
+            ['Post the deal', 'A business posts a deal with both prices, the coupon quantity, the purchase deadline and the final redemption date.'],
+            ['Buy the coupon', 'A buyer pays upfront and receives a unique six character code.'],
+            ['Redeem once', 'The business validates the code once at redemption, and the platform shares the sale with the business.'],
         ] as [$step, $line]) {
             $out .= '<li><strong>' . $this->h($step) . '</strong> ' . $this->h($line) . '</li>' . "\n";
         }
         $out .= '</ol>' . "\n";
+        $out .= '<h2>Where the money went</h2>' . "\n";
+        $out .= '<table class="ledger"><thead><tr><th>Deal</th><th>Sold</th><th>Takings</th><th>To business</th><th>To platform</th></tr></thead><tbody>' . "\n";
+        foreach (array_keys($this->dealHandles($sample)) as $handle) {
+            $row = $m->ledger((string) $handle);
+            $out .= '<tr><td>' . $this->h($row['deal']->title) . '</td><td>' . $row['sold'] . '</td><td>'
+                . $this->h($this->money($row['takings'])) . '</td><td>' . $this->h($this->money($row['to_business']))
+                . '</td><td>' . $this->h($this->money($row['to_platform'])) . '</td></tr>' . "\n";
+        }
+        $out .= '</tbody></table>' . "\n";
         $out .= $this->footer();
 
         return $out;
     }
 
-    private function card(Voucher $voucher): string
+    /** @return array<string, true> */
+    private function dealHandles(Sample $sample): array
     {
-        $answer = $voucher->answer();
-        $out = '<article class="voucher">' . "\n";
-        $out .= '<h2>' . $this->h($voucher->code) . '</h2>' . "\n";
-        $out .= '<p class="where">' . $this->h($voucher->holder) . '. Face ' . $this->h($this->money($voucher->faceValue))
-            . ', issued ' . $this->h($voucher->issuedDay) . ', last day ' . $this->h($voucher->lastDay) . '.</p>' . "\n";
-        $out .= '<p class="money">Balance ' . $this->h($this->money((int) $answer['balance'])) . ' of '
-            . $this->h($this->money((int) $answer['face'])) . '.</p>' . "\n";
-        if ($answer['redemptions'] === []) {
-            $out .= '<p class="untouched">No redemption yet.</p>' . "\n";
-        } else {
-            $out .= '<table class="runs"><thead><tr><th>Day</th><th>Spent</th><th>Left</th></tr></thead><tbody>' . "\n";
-            foreach ($answer['redemptions'] as $r) {
-                $out .= '<tr><td>' . $this->h((string) $r['day']) . '</td><td>' . $this->h($this->money((int) $r['amount']))
-                    . '</td><td>' . $this->h($this->money((int) $r['left'])) . '</td></tr>' . "\n";
-            }
-            $out .= '</tbody></table>' . "\n";
+        $handles = [];
+        foreach ($sample->market()->coupons() as $coupon) {
+            $handles[$coupon->deal] = true;
         }
-        $out .= $answer['open'] ? '<p class="open">Takes a redemption.</p>' . "\n" : '<p class="closed">Spent to nothing.</p>' . "\n";
+
+        return $handles;
+    }
+
+    /** @param array{deal: \Couponetta\Home\Deal, business: \Couponetta\Home\Business, sold: int, left: int, used: int} $row */
+    private function card(array $row): string
+    {
+        $deal = $row['deal'];
+        $out = '<article class="deal">' . "\n";
+        $out .= '<h2>' . $this->h($deal->title) . '</h2>' . "\n";
+        $out .= '<p class="where">' . $this->h($row['business']->name) . ', ' . $this->h($row['business']->town)
+            . '. ' . $this->h($row['business']->category) . ".</p>\n";
+        $out .= '<p class="price">' . $this->h($this->money($deal->dealCents)) . ' instead of '
+            . $this->h($this->money($deal->normalCents)) . ', ' . $deal->savingPercent() . '% off.</p>' . "\n";
+        $out .= '<p class="terms">' . $row['left'] . ' of ' . $deal->onSale . ' left. Buy by '
+            . $this->h($deal->buyByDay) . ', use by ' . $this->h($deal->useByDay) . ".</p>\n";
+        $out .= '<p class="split">Business takes ' . $this->h($this->money($deal->payoutCents())) . ' a coupon, the platform '
+            . $this->h($this->money($deal->commissionCents())) . ".</p>\n";
         $out .= '</article>' . "\n";
 
         return $out;

@@ -1,38 +1,43 @@
 # Couponetta
 
-Couponetta issues a voucher with a limited face value and a last day, and it
-redeems it in parts. One voucher, one holder, one balance that falls as the holder
-spends it.
+Couponetta is a deal site. A business offers a service at a cut price for a fixed run, a buyer
+pays the cut price up front, and the buyer turns up before the use-by date with a code the
+business checks off. The platform keeps a share of every sale.
 
 ## Words
 
-- **voucher**: one issued credit. It carries a code, a holder, a face value in
-  cents, an issued day and a last day.
-- **holder**: the party the voucher was issued to.
-- **face value**: the whole amount the voucher carried when it was issued.
-- **balance**: what is left on the voucher.
-- **redemption**: one spend against a voucher. It carries the voucher code, an
-  amount in cents and the day it happened.
-- **last day**: the day after which the voucher takes no redemption.
+- **business**: the party offering the deal. It carries a handle, a name, a town and a category.
+- **deal**: one offer. It carries a handle, the business, a title, the normal price in cents,
+  the deal price in cents, the number of coupons on sale, the day buying closes and the day
+  the coupon must be used by.
+- **coupon**: one sale. It carries a code, the deal, the buyer's handle, the day the buyer
+  paid and the day the buyer used it, which starts empty.
+- **share**: the part of the deal price the platform keeps. A deal carries its own, in basis
+  points.
+- **payout**: what the business receives from one coupon. The deal price less the platform's
+  share, in whole cents.
 
-## What a voucher enforces
+## What the model enforces
 
-- A redemption above the balance lands nowhere.
-- A redemption of zero or less lands nowhere.
-- A voucher takes no redemption after its last day.
-- A voucher belongs to one holder, and a redemption from another holder lands
-  nowhere.
-- A voucher with a balance of zero answers spent.
-- The balance never falls below zero.
+- A deal price sits below the normal price. A deal that saves a buyer nothing lands nowhere.
+- Both prices are positive, and the deal price is at least one cent.
+- The platform's share sits between 0 and 5000 basis points, so half the deal price at most.
+- A deal sells at most the coupons it puts on sale. Selling the last one closes it.
+- Buying closes at the buy-by date. A purchase after it lands nowhere.
+- The use-by date is later than the buy-by date.
+- A coupon is used once. A second use lands nowhere.
+- A coupon that is used after the use-by date lands nowhere.
+- A coupon carries a code of six characters, unique across the site.
 
-## What a voucher answers
+## What the page shows
 
-The answer names the code, the holder, the face value, the balance, whether the
-voucher still takes a redemption, and the redemptions in the order they happened.
+- the wall of open deals, with the saving, the price, how many are left and how many days the
+  buyer has left to buy
+- the takings for the sample, split between the businesses and the platform
 
 ## Open in version 1
 
-- Whether a voucher can be topped up. Version 1 says no.
-- Whether a voucher can move from one holder to another. Version 1 says no.
-- Whether an expired voucher keeps its balance or forfeits it. Version 1 keeps the
-  balance and refuses the redemption.
+- A coupon has no refund path. A buyer who never uses it leaves the money with the business
+  and the platform.
+- Every coupon sold counts, so a deal with a hundred on sale takes a hundred payments in the
+  model with no queue between them.

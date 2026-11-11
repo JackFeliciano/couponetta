@@ -1,7 +1,8 @@
 # Couponetta roadmap
 
-Couponetta issues a voucher and redeems it in parts. Version 1 keeps one voucher in
-one process, and the list below is what a shop and a holder need next.
+Couponetta sells a batch of discounted coupons and honours one code once at redemption.
+Version 1 keeps one deal in one process, and the list below is what a business and a
+buyer need next.
 
 ## Open in the model
 

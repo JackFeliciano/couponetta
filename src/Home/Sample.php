@@ -5,64 +5,80 @@ declare(strict_types=1);
 namespace Couponetta\Home;
 
 /**
- * Three vouchers on one server. One is part spent, one is spent to the last cent,
- * and one has been refused for the last day.
+ * Three businesses, four deals and eight coupons. The sample fixes its own today, so the
+ * wall and the ledger read the same on any day a reader opens it.
  */
 final class Sample
 {
-    /** @var list<Voucher> */
-    private array $vouchers = [];
+    public const TODAY = '2026-11-09';
+
+    private Market $market;
 
     public function __construct()
     {
-        $part = new Voucher('CPN-4A7', 'ana', 12000, '2026-09-01', '2026-12-31');
-        $part->redeem('ana', 2500, '2026-09-14');
-        $part->redeem('ana', 1750, '2026-09-28');
-        $this->vouchers[] = $part;
+        $this->market = new Market();
+        $this->market->addBusiness(new Business('taberna', 'Taberna do Largo', 'Porto', 'restaurants'));
+        $this->market->addBusiness(new Business('veleiro', 'Veleiro Nails', 'Lisbon', 'beauty'));
+        $this->market->addBusiness(new Business('alvorada', 'Alvorada Spa', 'Coimbra', 'wellness'));
 
-        $spent = new Voucher('CPN-9K2', 'bright', 5000, '2026-08-15', '2026-11-15');
-        $spent->redeem('bright', 5000, '2026-09-02');
-        $this->vouchers[] = $spent;
+        $this->market->post(new Deal('tab-dinner', 'taberna', 'Dinner for two with wine', 6000, 2900, 40, 2500, '2026-11-30', '2027-03-31'));
+        $this->market->post(new Deal('vel-mani', 'veleiro', 'Manicure and pedicure', 3500, 1700, 25, 3000, '2026-11-15', '2027-01-31'));
+        $this->market->post(new Deal('alv-massage', 'alvorada', 'Ninety minute massage', 8000, 3900, 30, 2000, '2026-12-20', '2027-04-30'));
+        $this->market->post(new Deal('tab-lunch', 'taberna', 'Lunch for two', 3200, 1900, 20, 2500, '2026-10-31', '2026-12-31'));
 
-        $closed = new Voucher('CPN-1T6', 'kestrel', 8000, '2026-07-01', '2026-09-30');
-        $closed->redeem('kestrel', 1200, '2026-09-30');
-        $this->vouchers[] = $closed;
+        $this->market->buy('tab-dinner', 'joana-m', '2026-11-02');
+        $this->market->buy('tab-dinner', 'rui-s', '2026-11-03');
+        $this->market->buy('tab-dinner', 'ines-p', '2026-11-04');
+        $this->market->buy('vel-mani', 'clara-t', '2026-11-05');
+        $this->market->buy('vel-mani', 'nuno-a', '2026-11-05');
+        $this->market->buy('alv-massage', 'sofia-l', '2026-11-06');
+        $this->market->buy('alv-massage', 'marta-r', '2026-11-07');
+        $this->market->buy('tab-lunch', 'hugo-b', '2026-10-20');
+
+        $codes = $this->codes();
+        $this->market->use($codes[0], '2026-11-05');
+        $this->market->use($codes[3], '2026-11-08');
+        $this->market->use($codes[5], '2026-11-09');
     }
 
-    /** @return list<Voucher> */
-    public function vouchers(): array
+    /** @return list<string> */
+    private function codes(): array
     {
-        return $this->vouchers;
+        return array_map(static fn (Coupon $coupon): string => $coupon->code, $this->market->coupons());
     }
 
-    public function voucher(string $code): Voucher
+    public function market(): Market
     {
-        foreach ($this->vouchers as $voucher) {
-            if ($voucher->code === $code) {
-                return $voucher;
-            }
+        return $this->market;
+    }
+
+    public function deals(): int
+    {
+        return count($this->market->wall(self::TODAY));
+    }
+
+    public function couponsSold(): int
+    {
+        return $this->market->couponsSold();
+    }
+
+    public function couponsUsed(): int
+    {
+        $used = 0;
+        foreach ($this->market->wall(self::TODAY) as $row) {
+            $used += $row['used'];
         }
 
-        throw new \RuntimeException('this server holds no voucher called ' . $code);
+        return $used;
     }
 
-    public function redemptions(): int
+    public function takings(): int
     {
-        $sum = 0;
-        foreach ($this->vouchers as $voucher) {
-            $sum += count($voucher->redemptions());
-        }
-
-        return $sum;
+        return $this->market->takings();
     }
 
-    public function balance(): int
+    public function toPlatform(): int
     {
-        $sum = 0;
-        foreach ($this->vouchers as $voucher) {
-            $sum += $voucher->balance();
-        }
-
-        return $sum;
+        return $this->market->toPlatform();
     }
 }
